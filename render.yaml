@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: whatsapp-scheduler-backend
+    env: node
+    plan: free
+    runtime: node
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: node dist/app.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FAST_START
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+    # Variables sensibles se agregan luego en el dashboard: WASENDER_API_TOKEN, CRONHOOKS_API_TOKEN, API_KEY, CORS_ORIGIN, WEBHOOK_BASE_URL
