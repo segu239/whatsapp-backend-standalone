@@ -447,7 +447,7 @@ export class WasenderService {
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Fetching account information');
 
-      const response = await this.axiosInstance.get<WasenderAccountInfo>('/account');
+      const response = await this.axiosInstance.get<WasenderAccountInfo>('/user');
 
       this.logger.serviceOperation('getAccountInfo', 'success', {
         plan: response.data.plan,
