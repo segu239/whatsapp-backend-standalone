@@ -476,8 +476,13 @@ app.setupGracefulShutdown();
 // Iniciar el servidor si este archivo se ejecuta directamente
 if (require.main === module) {
   app.start().catch((error) => {
+    console.error('==========================================');
+    console.error('CRITICAL ERROR - Failed to start application:');
+    console.error(error);
+    console.error('==========================================');
     defaultLogger.error('Failed to start application', error);
-    process.exit(1);
+    // No hacer process.exit para permitir debugging en Railway
+    setTimeout(() => process.exit(1), 5000); // Esperar 5 segundos para logs
   });
 }
 

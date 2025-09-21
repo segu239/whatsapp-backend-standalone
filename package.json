@@ -4,7 +4,7 @@
   "description": "Backend for WhatsApp Scheduler with Wasender and Cronhooks integration",
   "main": "dist/app.js",
   "scripts": {
-    "start": "node -e \"const fs=require('fs');if(!fs.existsSync('dist')){console.log('[startup] dist missing, building...');require('child_process').execSync('npm run build',{stdio:'inherit'});}require('./dist/app.js');\"",
+    "start": "node dist/app.js",
     "postinstall": "npm run build",
     "dev": "nodemon src/app.ts",
     "build": "tsc",

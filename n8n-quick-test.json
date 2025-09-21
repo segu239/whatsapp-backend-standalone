@@ -1,0 +1,207 @@
+{
+  "name": "WhatsApp Backend Quick Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://web-production-6e3a.up.railway.app/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "quick-health",
+      "name": "🩺 Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "method": "POST",
+        "url": "https://web-production-6e3a.up.railway.app/api/v1/messages/send",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"phoneNumber\": \"+573001234567\",\n  \"messageType\": \"text\",\n  \"message\": \"🤖 Test from n8n: {{ $now.toFormat('HH:mm:ss') }}\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "quick-send",
+      "name": "📱 Send Quick Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://web-production-6e3a.up.railway.app/api/v1/wasender/sessions",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "quick-sessions",
+      "name": "📋 Get Sessions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://web-production-6e3a.up.railway.app/api/v1/messages/schedules",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "quick-schedules",
+      "name": "📅 Get Schedules",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        500
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Quick test results summary\nconst results = {\n  timestamp: new Date().toISOString(),\n  health: null,\n  sendMessage: null,\n  sessions: null,\n  schedules: null,\n  summary: {\n    total: 0,\n    success: 0,\n    failed: 0\n  }\n};\n\n// Procesar resultados\nfor (const item of $input.all()) {\n  const statusCode = item.json.statusCode;\n  const success = statusCode >= 200 && statusCode < 300;\n  \n  results.summary.total++;\n  if (success) results.summary.success++;\n  else results.summary.failed++;\n  \n  // Identificar por URL\n  const url = item.json.url || '';\n  if (url.includes('/health')) {\n    results.health = { success, statusCode, response: item.json };\n  } else if (url.includes('/messages/send')) {\n    results.sendMessage = { success, statusCode, response: item.json };\n  } else if (url.includes('/sessions')) {\n    results.sessions = { success, statusCode, response: item.json };\n  } else if (url.includes('/schedules')) {\n    results.schedules = { success, statusCode, response: item.json };\n  }\n}\n\n// Status general\nresults.summary.status = results.summary.failed === 0 ? '✅ ALL TESTS PASSED' : \n  results.summary.success > 0 ? '⚠️ PARTIAL SUCCESS' : '❌ ALL TESTS FAILED';\n\nreturn { results };"
+      },
+      "id": "quick-summary",
+      "name": "📊 Quick Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        350
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "🩺 Health Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📱 Send Quick Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📋 Get Sessions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📅 Get Schedules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🩺 Health Check": {
+      "main": [
+        [
+          {
+            "node": "📊 Quick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Send Quick Message": {
+      "main": [
+        [
+          {
+            "node": "📊 Quick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Sessions": {
+      "main": [
+        [
+          {
+            "node": "📊 Quick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 Get Schedules": {
+      "main": [
+        [
+          {
+            "node": "📊 Quick Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "whatsapp-backend-quick-test",
+  "tags": []
+}

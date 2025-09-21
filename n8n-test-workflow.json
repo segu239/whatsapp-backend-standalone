@@ -1,0 +1,497 @@
+{
+  "name": "WhatsApp Backend API Test Suite",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "scheduler",
+      "name": "Test Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/health",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "health-check",
+      "name": "1. Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/wasender/health",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "wasender-health",
+      "name": "2. Wasender Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/wasender/sessions",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-sessions",
+      "name": "3. Get Sessions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "method": "POST",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/messages/send",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"phoneNumber\": \"+1234567890\",\n  \"messageType\": \"text\",\n  \"message\": \"Test message from n8n at {{ $now }}\"\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "send-test-message",
+      "name": "4. Send Test Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "method": "POST",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/messages/schedule",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"phoneNumber\": \"+1234567890\",\n  \"message\": \"Scheduled test message from n8n\",\n  \"contactName\": \"Test Contact\",\n  \"isRecurring\": false,\n  \"scheduledDateTime\": \"{{ $now.plus({minutes: 5}).toISO() }}\"\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "schedule-message",
+      "name": "5. Schedule Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1340,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/messages/schedules",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-schedules",
+      "name": "6. Get Schedules",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1560,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/wasender/account",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "wasender-account",
+      "name": "7. Wasender Account",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        500
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/wasender/stats",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "wasender-stats",
+      "name": "8. Wasender Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        500
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "=https://web-production-6e3a.up.railway.app/api/v1/messages/schedules/stats",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "schedule-stats",
+      "name": "9. Schedule Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        500
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "api-key-auth",
+          "name": "Backend API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success-check",
+              "leftValue": "={{ $('1. Health Check').item.json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "health-check-condition",
+      "name": "Health OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "merge-results",
+      "name": "Merge All Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1780,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar todos los resultados de las pruebas\nconst results = {\n  timestamp: new Date().toISOString(),\n  tests: {\n    healthCheck: null,\n    wasenderHealth: null,\n    sessions: null,\n    sendMessage: null,\n    scheduleMessage: null,\n    getSchedules: null,\n    wasenderAccount: null,\n    wasenderStats: null,\n    scheduleStats: null\n  },\n  summary: {\n    total: 0,\n    passed: 0,\n    failed: 0,\n    errors: []\n  }\n};\n\n// Analizar cada resultado\nfor (const item of $input.all()) {\n  const node = item.json.node || 'unknown';\n  const statusCode = item.json.statusCode;\n  const success = statusCode >= 200 && statusCode < 300;\n  \n  results.summary.total++;\n  \n  if (success) {\n    results.summary.passed++;\n  } else {\n    results.summary.failed++;\n    results.summary.errors.push({\n      node: node,\n      statusCode: statusCode,\n      error: item.json.error || 'Unknown error'\n    });\n  }\n  \n  // Mapear resultados específicos\n  switch(node) {\n    case '1. Health Check':\n      results.tests.healthCheck = { success, statusCode, data: item.json };\n      break;\n    case '2. Wasender Health':\n      results.tests.wasenderHealth = { success, statusCode, data: item.json };\n      break;\n    case '3. Get Sessions':\n      results.tests.sessions = { success, statusCode, data: item.json };\n      break;\n    case '4. Send Test Message':\n      results.tests.sendMessage = { success, statusCode, data: item.json };\n      break;\n    case '5. Schedule Message':\n      results.tests.scheduleMessage = { success, statusCode, data: item.json };\n      break;\n    case '6. Get Schedules':\n      results.tests.getSchedules = { success, statusCode, data: item.json };\n      break;\n    case '7. Wasender Account':\n      results.tests.wasenderAccount = { success, statusCode, data: item.json };\n      break;\n    case '8. Wasender Stats':\n      results.tests.wasenderStats = { success, statusCode, data: item.json };\n      break;\n    case '9. Schedule Stats':\n      results.tests.scheduleStats = { success, statusCode, data: item.json };\n      break;\n  }\n}\n\n// Calcular porcentaje de éxito\nresults.summary.successRate = results.summary.total > 0 ? \n  Math.round((results.summary.passed / results.summary.total) * 100) : 0;\n\nreturn { results };"
+      },
+      "id": "process-results",
+      "name": "Process Test Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cronhooks.io/schedules",
+        "authentication": "genericCredential",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer key_fabf8f07289e4161bc4ed304a4d8dc52"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"title\": \"WhatsApp Backend Test Results\",\n  \"url\": \"https://webhook.site/your-webhook-url\",\n  \"schedule\": \"0 */6 * * *\",\n  \"timezone\": \"UTC\",\n  \"request\": {\n    \"method\": \"POST\",\n    \"headers\": {\n      \"Content-Type\": \"application/json\"\n    },\n    \"body\": {{ JSON.stringify($json.results) }}\n  }\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "send-to-cronhooks",
+      "name": "Send Results to Cronhooks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2220,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cronhooks-auth",
+          "name": "Cronhooks API Key"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Test Scheduler": {
+      "main": [
+        [
+          {
+            "node": "1. Health Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Health Check": {
+      "main": [
+        [
+          {
+            "node": "2. Wasender Health",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Wasender Health": {
+      "main": [
+        [
+          {
+            "node": "3. Get Sessions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Get Sessions": {
+      "main": [
+        [
+          {
+            "node": "4. Send Test Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Send Test Message": {
+      "main": [
+        [
+          {
+            "node": "5. Schedule Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Schedule Message": {
+      "main": [
+        [
+          {
+            "node": "6. Get Schedules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Get Schedules": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health OK?": {
+      "main": [
+        [
+          {
+            "node": "7. Wasender Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Wasender Account": {
+      "main": [
+        [
+          {
+            "node": "8. Wasender Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Wasender Stats": {
+      "main": [
+        [
+          {
+            "node": "9. Schedule Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Schedule Stats": {
+      "main": [
+        [
+          {
+            "node": "Merge All Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Results": {
+      "main": [
+        [
+          {
+            "node": "Process Test Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Test Results": {
+      "main": [
+        [
+          {
+            "node": "Send Results to Cronhooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "whatsapp-backend-test",
+  "tags": []
+}
