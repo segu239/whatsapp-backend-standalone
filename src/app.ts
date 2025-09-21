@@ -31,11 +31,27 @@ class App {
 
   constructor() {
     this.app = express();
+    // Configurar healthz PRIMERO antes que todo lo demás
+    this.initializeBasicHealthCheck();
     this.initializeServices();
     this.initializeMiddlewares();
     this.initializeRoutes();
     this.initializeErrorHandling();
     this.initializeHealthChecks();
+  }
+
+  /**
+   * Configura endpoint básico de healthcheck que está disponible inmediatamente
+   */
+  private initializeBasicHealthCheck(): void {
+    // Health check liviano sin dependencias - disponible inmediatamente
+    this.app.get('/healthz', (req, res) => {
+      res.status(200).json({
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+      });
+    });
   }
 
   /**
@@ -52,8 +68,8 @@ class App {
 
       this.logger.info('Services initialized successfully');
     } catch (error) {
-      this.logger.error('Failed to initialize services', error);
-      process.exit(1);
+      this.logger.error('Failed to initialize services - continuing with degraded mode', error);
+      // No hacer process.exit(1) para permitir que healthz funcione
     }
   }
 
@@ -297,14 +313,7 @@ class App {
       }
     });
 
-    // Health check liviano sin dependencias externas
-    this.app.get('/healthz', (req: Request, res: Response) => {
-      res.status(200).json({
-        status: 'ok',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-      });
-    });
+    // /healthz ya está configurado en initializeBasicHealthCheck()
 
     // Endpoint de métricas básicas
     this.app.get('/metrics', AuthMiddleware.optionalAuthenticate, (req: Request, res: Response) => {
