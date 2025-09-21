@@ -31,28 +31,24 @@ class App {
 
   constructor() {
     this.app = express();
-    // Configurar healthz PRIMERO antes que todo lo demás
-    this.initializeBasicHealthCheck();
-    this.initializeServices();
-    this.initializeMiddlewares();
-    this.initializeRoutes();
-    this.initializeErrorHandling();
-    this.initializeHealthChecks();
+
+    // ULTRA-BÁSICO: healthz disponible INMEDIATAMENTE sin dependencias
+    this.app.get('/healthz', (req, res) => {
+      res.status(200).json({ status: 'ok', uptime: process.uptime() });
+    });
+
+    try {
+      this.initializeServices();
+      this.initializeMiddlewares();
+      this.initializeRoutes();
+      this.initializeErrorHandling();
+      this.initializeHealthChecks();
+    } catch (error) {
+      // Continuar aunque falle la inicialización - healthz seguirá funcionando
+      console.error('Initialization failed but continuing:', error);
+    }
   }
 
-  /**
-   * Configura endpoint básico de healthcheck que está disponible inmediatamente
-   */
-  private initializeBasicHealthCheck(): void {
-    // Health check liviano sin dependencias - disponible inmediatamente
-    this.app.get('/healthz', (req, res) => {
-      res.status(200).json({
-        status: 'ok',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-      });
-    });
-  }
 
   /**
    * Inicializa los servicios principales
@@ -406,8 +402,8 @@ class App {
     const fastStart = process.env.FAST_START === 'true';
 
     try {
-      // Iniciar servidor primero para no bloquear healthchecks
-      this.app.listen(port, () => {
+      // Iniciar servidor primero para no bloquear healthchecks - escuchar en todas las interfaces
+      this.app.listen(port, '0.0.0.0', () => {
         this.logger.info(`Server listening (initializing configuration validation${fastStart ? ' - FAST_START enabled' : ''})`, {
           port,
           environment: process.env.NODE_ENV || 'development'
