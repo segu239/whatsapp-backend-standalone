@@ -75,6 +75,9 @@ class App {
   private initializeMiddlewares(): void {
     this.logger.info('Initializing middlewares...');
 
+    // Configurar trust proxy para Railway
+    this.app.set('trust proxy', true);
+
     // Configuración de CORS
     const corsOptions = {
       origin: (process.env.CORS_ORIGIN || 'http://localhost:8100').split(','),

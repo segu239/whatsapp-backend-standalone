@@ -164,7 +164,7 @@ export class RetryUtil {
    */
   static shouldRetryWasenderError(error: any): boolean {
     // Usar la lógica HTTP general como base
-    if (!this.shouldRetryHttpError(error)) {
+    if (!RetryUtil.shouldRetryHttpError(error)) {
       return false;
     }
 
