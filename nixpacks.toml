@@ -1,8 +1,10 @@
 [providers]
-node = "18.x"
+# Actualizado a Node 20 para alinear con package.json (engines.node = 20.x)
+node = "20.x"
 
 [phases.setup]
-nixPkgs = ["nodejs-18_x"]
+# Usa la versión de node 20.x en nixpacks
+nixPkgs = ["nodejs-20_x"]
 
 [phases.install]
 cmds = ["npm ci"]

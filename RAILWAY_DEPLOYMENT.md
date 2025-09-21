@@ -1,10 +1,10 @@
-# 🚀 Guía de Deployment en Railway
+# 🚀 Guía de Deployment en Railway (Actualizada Node 20.x)
 
 Este documento contiene las instrucciones para desplegar el WhatsApp Scheduler Backend en Railway.
 
 ## ✅ Estado Actual del Proyecto
 
-El proyecto ya está **completamente configurado** para Railway con:
+El proyecto ya está **configurado** para Railway con:
 
 - ✅ **railway.json** - Configuración principal de Railway
 - ✅ **railway.toml** - Configuración alternativa con nixpacks
@@ -25,16 +25,16 @@ npm run build
 npm start
 ```
 
-### 2. Configurar Railway CLI (Opcional)
+### 2. Configurar Railway CLI (Recomendado para despliegue directo)
 
-```bash
-# Instalar Railway CLI
+```powershell
+# Instalar Railway CLI globalmente
 npm install -g @railway/cli
 
-# Login en Railway
+# Iniciar sesión (abre navegador)
 railway login
 
-# Conectar proyecto existente o crear uno nuevo
+# Inicializar (linkear a proyecto existente o crear uno nuevo)
 railway init
 ```
 
@@ -49,12 +49,33 @@ railway init
 
 ### 4. Deployment via Railway CLI
 
-```bash
-# Deploy directo desde terminal
-railway up
+Comando rápido (usa el script agregado `deploy:railway`):
 
-# O especificar servicio
-railway up --service backend
+```powershell
+npm run deploy:railway
+```
+
+Pasos manuales equivalentes:
+```powershell
+npm run build
+railway up
+```
+
+Para ver variables actuales del proyecto:
+```powershell
+railway variables
+```
+
+Para establecer variables (ejemplos):
+```powershell
+railway variables set NODE_ENV=production PORT=3000 FAST_START=true LOG_LEVEL=info
+railway variables set WASENDER_API_TOKEN=xxxx CRONHOOKS_API_TOKEN=yyyy API_KEY=mi_api_key
+railway variables set CORS_ORIGIN=https://mi-frontend.com WEBHOOK_BASE_URL=https://<tu-subdominio>.up.railway.app
+```
+
+Ver logs después del deploy:
+```powershell
+railway logs --tail
 ```
 
 ## 🔐 Variables de Entorno Requeridas
@@ -95,9 +116,9 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 
 ## 📋 Configuración Automática
 
-Railway utilizará automáticamente:
+Railway utilizará automáticamente (ajustado a Node 20.x):
 
-- **Builder**: Nixpacks (Node.js 18.x)
+- **Builder**: Nixpacks (Node.js 20.x)
 - **Build Command**: `npm run build`
 - **Start Command**: `npm start`
 - **Health Check**: `/health`
