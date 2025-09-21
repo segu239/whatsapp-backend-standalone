@@ -3,9 +3,6 @@ providers = ["node"]
 [variables]
 NODE_ENV = "production"
 
-[phases.setup]
-nixPkgs = ["nodejs-20_x"]
-
 [phases.install]
 cmds = ["npm ci"]
 
