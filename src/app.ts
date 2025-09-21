@@ -398,7 +398,7 @@ class App {
    * Inicia el servidor
    */
   public async start(): Promise<void> {
-    const port = process.env.PORT || 3000;
+    const port = parseInt(process.env.PORT || '3000');
     const fastStart = process.env.FAST_START === 'true';
 
     try {
