@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { createLogger } from '../utils/logger';
 import { RetryUtil } from '../utils/retry.util';
+import { ServiceUnavailableError, AppError, UnauthorizedError, ForbiddenError } from '../middleware/error.middleware';
 import {
   WasenderMessage,
   WasenderResponse,
@@ -81,28 +82,41 @@ export class WasenderService {
   private formatError(error: any): Error {
     if (error.response) {
       const { status, data } = error.response;
-      let message = `Wasender API error (${status})`;
+      const baseMessage = data?.message || data?.error || 'Wasender API error';
 
-      if (data?.message) {
-        message += `: ${data.message}`;
+      // Map status codes to specific AppError subclasses where aplicable
+      if (status === 401) {
+        return new UnauthorizedError(`Wasender auth failed: ${baseMessage}`);
+      }
+      if (status === 403) {
+        return new ForbiddenError(`Wasender permission denied: ${baseMessage}`);
       }
 
-      if (data?.errors) {
-        const validationErrors = Object.values(data.errors).flat();
-        message += ` - Validation errors: ${validationErrors.join(', ')}`;
+      // Validation style errors (422 / 400)
+      if (status === 400 || status === 422) {
+        const details: string[] = [];
+        if (data?.errors) {
+          try {
+            const validationErrors = Object.values(data.errors).flat();
+            details.push(...(validationErrors as any));
+          } catch (_) { /* ignore */ }
+        }
+        const message = details.length
+          ? `${baseMessage} - ${details.join(', ')}`
+          : baseMessage;
+        return new AppError(message, 400, 'WASENDER_VALIDATION_ERROR');
       }
 
-      const formattedError = new Error(message);
-      (formattedError as any).status = status;
-      (formattedError as any).response = error.response;
-      return formattedError;
+      // Demás códigos => AppError con status original si es 4xx, o 502 si es 5xx externo
+      const statusCode = status >= 500 ? 502 : status;
+      return new AppError(`Wasender API error (${status}): ${baseMessage}`, statusCode, 'WASENDER_API_ERROR');
     }
 
     if (error.code) {
-      return new Error(`Network error: ${error.code} - ${error.message}`);
+      return new AppError(`Network error: ${error.code}`, 502, 'WASENDER_NETWORK_ERROR');
     }
 
-    return new Error(error.message || 'Unknown Wasender API error');
+    return new AppError(error.message || 'Unknown Wasender API error', 502, 'WASENDER_UNKNOWN_ERROR');
   }
 
   /**
@@ -143,7 +157,7 @@ export class WasenderService {
 
   /** Envía un mensaje de texto */
   async sendTextMessage(phoneNumber: string, message: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Sending text message', { to: phoneNumber, messageLength: message.length });
       return this.postSendMessage('sendTextMessage', { to: phoneNumber, text: message });
@@ -154,7 +168,7 @@ export class WasenderService {
    * Envía un mensaje con imagen
    */
   async sendImageMessage(phoneNumber: string, imageUrl: string, caption?: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Sending image message', { to: phoneNumber, imageUrl, hasCaption: !!caption });
       return this.postSendMessage('sendImageMessage', { to: phoneNumber, imageUrl, image: imageUrl, caption });
@@ -165,7 +179,7 @@ export class WasenderService {
    * Envía un mensaje con documento
    */
   async sendDocumentMessage(phoneNumber: string, documentUrl: string, filename?: string, caption?: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Sending document message', { to: phoneNumber, documentUrl, filename, hasCaption: !!caption });
       return this.postSendMessage('sendDocumentMessage', { to: phoneNumber, documentUrl, document: documentUrl, fileName: filename, filename, caption });
@@ -176,7 +190,7 @@ export class WasenderService {
    * Envía un mensaje con audio
    */
   async sendAudioMessage(phoneNumber: string, audioUrl: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Sending audio message', { to: phoneNumber, audioUrl });
       return this.postSendMessage('sendAudioMessage', { to: phoneNumber, audioUrl, audio: audioUrl });
@@ -187,7 +201,7 @@ export class WasenderService {
    * Envía un mensaje con video
    */
   async sendVideoMessage(phoneNumber: string, videoUrl: string, caption?: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Sending video message', { to: phoneNumber, videoUrl, hasCaption: !!caption });
       return this.postSendMessage('sendVideoMessage', { to: phoneNumber, videoUrl, video: videoUrl, caption });
@@ -199,7 +213,7 @@ export class WasenderService {
    */
   async sendMessage(request: SendMessageRequest): Promise<WasenderResponse> {
     if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+      throw new ServiceUnavailableError('Wasender');
     }
     const { phoneNumber, messageType } = request;
 
@@ -248,7 +262,7 @@ export class WasenderService {
    * Obtiene información detallada de un mensaje por ID
    */
   async getMessageInfo(messageId: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Fetching message info', { messageId });
       const response = await this.axiosInstance.get<WasenderResponse>(`/messages/${messageId}/info`);
@@ -262,7 +276,7 @@ export class WasenderService {
    */
   async getSessions(): Promise<WasenderSession[]> {
     if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+      throw new ServiceUnavailableError('Wasender');
     }
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Fetching WhatsApp sessions');
@@ -282,7 +296,7 @@ export class WasenderService {
    */
   async getSessionInfo(sessionId: string): Promise<WasenderSession> {
     if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+      throw new ServiceUnavailableError('Wasender');
     }
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Fetching session info', { sessionId });
@@ -323,7 +337,7 @@ export class WasenderService {
    * Desconecta una sesión de WhatsApp
    */
   async disconnectSession(sessionId: string): Promise<WasenderResponse> {
-    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  if (this.disabled) throw new ServiceUnavailableError('Wasender');
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Disconnecting WhatsApp session', { sessionId });
       const response = await this.axiosInstance.post<WasenderResponse>(`/whatsapp-sessions/${sessionId}/disconnect`, {});
@@ -337,7 +351,7 @@ export class WasenderService {
    */
   async createSession(sessionData: Partial<WasenderSession>): Promise<WasenderSession> {
     if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+      throw new ServiceUnavailableError('Wasender');
     }
     return RetryUtil.executeWasenderOperation(async () => {
       this.logger.info('Creating new WhatsApp session', { sessionData });

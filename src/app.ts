@@ -75,8 +75,19 @@ class App {
   private initializeMiddlewares(): void {
     this.logger.info('Initializing middlewares...');
 
-    // Configurar trust proxy para Railway
-    this.app.set('trust proxy', true);
+    // Configurar trust proxy de forma segura.
+    // Evita usar 'true' (confía en toda la cadena) porque permite que un cliente falsifique X-Forwarded-For y evada el rate limiting.
+    // Referencia: express-rate-limit ERR_ERL_PERMISSIVE_TRUST_PROXY
+    // Se puede controlar via env TRUST_PROXY_SETTING. Valores aceptados: número de hops, 'false', listado de IPs o subnets.
+    const trustProxySetting = process.env.TRUST_PROXY_SETTING || '1';
+    if (trustProxySetting === 'false' || trustProxySetting === '0') {
+      this.app.set('trust proxy', false);
+    } else if (/^\d+$/.test(trustProxySetting)) {
+      this.app.set('trust proxy', parseInt(trustProxySetting, 10));
+    } else {
+      // Permite formatos como 'loopback, linklocal, uniquelocal' o lista de subnets
+      this.app.set('trust proxy', trustProxySetting);
+    }
 
     // Configuración de CORS
     const corsOptions = {
@@ -107,6 +118,11 @@ class App {
       },
       standardHeaders: true,
       legacyHeaders: false,
+      // Generador de clave robusto: usa req.ip ya normalizado por trust proxy seguro
+      keyGenerator: (req) => {
+        // fallback a remoteAddress si por alguna razón ip no está
+        return req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+      },
       // Excluir health checks del rate limiting
       skip: (req) => req.path === '/health' || req.path === '/webhook/health'
     });

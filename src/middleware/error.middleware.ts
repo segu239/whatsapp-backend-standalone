@@ -220,7 +220,8 @@ export class ErrorMiddleware {
     }
 
     // Error genérico no manejado
-    const statusCode = (error as any).statusCode || 500;
+  // Tomar en cuenta error.status (usado por algunas libs) si statusCode no existe
+  const statusCode = (error as any).statusCode || (error as any).status || 500;
     const isServerError = statusCode >= 500;
 
     return {
