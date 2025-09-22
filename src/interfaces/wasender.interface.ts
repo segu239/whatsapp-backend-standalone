@@ -1,12 +1,31 @@
 export interface WasenderMessage {
   to: string;
   text?: string;
-  image?: string;
-  document?: string;
-  audio?: string;
-  video?: string;
+  /**
+   * Campos de medios según documentación oficial (send-message):
+   * - imageUrl
+   * - videoUrl
+   * - documentUrl
+   * - audioUrl (no siempre documentado pero usado de forma consistente)
+   *
+   * Se mantienen los campos legacy (image, video, document, audio) por compatibilidad
+   * interna ya que el servicio original usaba nombres simples. Al construir el payload
+   * se enviarán ambas variantes cuando corresponda para asegurar compatibilidad futura.
+   */
+  imageUrl?: string;     // URL de imagen (oficial)
+  videoUrl?: string;     // URL de video (oficial)
+  documentUrl?: string;  // URL de documento (oficial)
+  audioUrl?: string;     // URL de audio (oficial / asumido)
+  image?: string;        // legacy interno
+  video?: string;        // legacy interno
+  document?: string;     // legacy interno
+  audio?: string;        // legacy interno
   caption?: string;
-  filename?: string;
+  /** Nombre de archivo (oficial: fileName). Se mantiene filename para compatibilidad */
+  fileName?: string;
+  filename?: string; // legacy interno
+  /** ID de mensaje al que se responde (reply / quoted messages) */
+  replyTo?: string | number;
 }
 
 export interface WasenderResponse {
@@ -55,6 +74,8 @@ export interface SendMessageRequest {
   videoUrl?: string;
   caption?: string;
   filename?: string;
+  fileName?: string; // alias soportado por API oficial
+  replyTo?: string | number;
   messageType: 'text' | 'image' | 'document' | 'audio' | 'video';
 }
 

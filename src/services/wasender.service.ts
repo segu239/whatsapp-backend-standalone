@@ -106,31 +106,47 @@ export class WasenderService {
   }
 
   /**
-   * Envía un mensaje de texto
+   * Construye payload estándar de envío soportando campos legacy y oficiales.
    */
-  async sendTextMessage(phoneNumber: string, message: string): Promise<WasenderResponse> {
-    if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+  private buildSendPayload(base: WasenderMessage): WasenderMessage {
+    // Normalizar alias filename/fileName
+    if (base.filename && !base.fileName) {
+      (base as any).fileName = base.filename;
+    } else if (base.fileName && !base.filename) {
+      (base as any).filename = base.fileName; // mantener duplicado para compatibilidad interna
     }
+
+    // Copiar valores legacy a oficiales si sólo legacy viene y viceversa
+    if (base.image && !base.imageUrl) base.imageUrl = base.image;
+    if (base.imageUrl && !base.image) base.image = base.imageUrl;
+    if (base.video && !base.videoUrl) base.videoUrl = base.video;
+    if (base.videoUrl && !base.video) base.video = base.videoUrl;
+    if (base.document && !base.documentUrl) base.documentUrl = base.document;
+    if (base.documentUrl && !base.document) base.document = base.documentUrl;
+    if (base.audio && !base.audioUrl) base.audioUrl = base.audio;
+    if (base.audioUrl && !base.audio) base.audio = base.audioUrl;
+    return base;
+  }
+
+  /**
+   * Envío genérico al endpoint oficial /send-message (reemplaza /messages).
+   */
+  private async postSendMessage(operation: string, payload: WasenderMessage): Promise<WasenderResponse> {
+    const finalPayload = this.buildSendPayload({ ...payload });
+    const response = await this.axiosInstance.post<WasenderResponse>('/send-message', finalPayload);
+    this.logger.serviceOperation(operation, 'success', {
+      messageId: response.data.data?.id,
+      status: response.data.data?.status
+    });
+    return response.data;
+  }
+
+  /** Envía un mensaje de texto */
+  async sendTextMessage(phoneNumber: string, message: string): Promise<WasenderResponse> {
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
     return RetryUtil.executeWasenderOperation(async () => {
-      const payload: WasenderMessage = {
-        to: phoneNumber,
-        text: message
-      };
-
-      this.logger.info('Sending text message', {
-        to: phoneNumber,
-        messageLength: message.length
-      });
-
-      const response = await this.axiosInstance.post<WasenderResponse>('/messages', payload);
-
-      this.logger.serviceOperation('sendTextMessage', 'success', {
-        messageId: response.data.data?.id,
-        status: response.data.data?.status
-      });
-
-      return response.data;
+      this.logger.info('Sending text message', { to: phoneNumber, messageLength: message.length });
+      return this.postSendMessage('sendTextMessage', { to: phoneNumber, text: message });
     }, 'sendTextMessage');
   }
 
@@ -138,30 +154,10 @@ export class WasenderService {
    * Envía un mensaje con imagen
    */
   async sendImageMessage(phoneNumber: string, imageUrl: string, caption?: string): Promise<WasenderResponse> {
-    if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
-    }
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
     return RetryUtil.executeWasenderOperation(async () => {
-      const payload: WasenderMessage = {
-        to: phoneNumber,
-        image: imageUrl,
-        caption: caption || ""
-      };
-
-      this.logger.info('Sending image message', {
-        to: phoneNumber,
-        imageUrl,
-        hasCaption: !!caption
-      });
-
-      const response = await this.axiosInstance.post<WasenderResponse>('/messages', payload);
-
-      this.logger.serviceOperation('sendImageMessage', 'success', {
-        messageId: response.data.data?.id,
-        status: response.data.data?.status
-      });
-
-      return response.data;
+      this.logger.info('Sending image message', { to: phoneNumber, imageUrl, hasCaption: !!caption });
+      return this.postSendMessage('sendImageMessage', { to: phoneNumber, imageUrl, image: imageUrl, caption });
     }, 'sendImageMessage');
   }
 
@@ -169,32 +165,10 @@ export class WasenderService {
    * Envía un mensaje con documento
    */
   async sendDocumentMessage(phoneNumber: string, documentUrl: string, filename?: string, caption?: string): Promise<WasenderResponse> {
-    if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
-    }
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
     return RetryUtil.executeWasenderOperation(async () => {
-      const payload: WasenderMessage = {
-        to: phoneNumber,
-        document: documentUrl,
-        filename: filename || "document",
-        caption: caption || ""
-      };
-
-      this.logger.info('Sending document message', {
-        to: phoneNumber,
-        documentUrl,
-        filename,
-        hasCaption: !!caption
-      });
-
-      const response = await this.axiosInstance.post<WasenderResponse>('/messages', payload);
-
-      this.logger.serviceOperation('sendDocumentMessage', 'success', {
-        messageId: response.data.data?.id,
-        status: response.data.data?.status
-      });
-
-      return response.data;
+      this.logger.info('Sending document message', { to: phoneNumber, documentUrl, filename, hasCaption: !!caption });
+      return this.postSendMessage('sendDocumentMessage', { to: phoneNumber, documentUrl, document: documentUrl, fileName: filename, filename, caption });
     }, 'sendDocumentMessage');
   }
 
@@ -202,28 +176,10 @@ export class WasenderService {
    * Envía un mensaje con audio
    */
   async sendAudioMessage(phoneNumber: string, audioUrl: string): Promise<WasenderResponse> {
-    if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
-    }
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
     return RetryUtil.executeWasenderOperation(async () => {
-      const payload: WasenderMessage = {
-        to: phoneNumber,
-        audio: audioUrl
-      };
-
-      this.logger.info('Sending audio message', {
-        to: phoneNumber,
-        audioUrl
-      });
-
-      const response = await this.axiosInstance.post<WasenderResponse>('/messages', payload);
-
-      this.logger.serviceOperation('sendAudioMessage', 'success', {
-        messageId: response.data.data?.id,
-        status: response.data.data?.status
-      });
-
-      return response.data;
+      this.logger.info('Sending audio message', { to: phoneNumber, audioUrl });
+      return this.postSendMessage('sendAudioMessage', { to: phoneNumber, audioUrl, audio: audioUrl });
     }, 'sendAudioMessage');
   }
 
@@ -231,30 +187,10 @@ export class WasenderService {
    * Envía un mensaje con video
    */
   async sendVideoMessage(phoneNumber: string, videoUrl: string, caption?: string): Promise<WasenderResponse> {
-    if (this.disabled) {
-      throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
-    }
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
     return RetryUtil.executeWasenderOperation(async () => {
-      const payload: WasenderMessage = {
-        to: phoneNumber,
-        video: videoUrl,
-        caption: caption || ""
-      };
-
-      this.logger.info('Sending video message', {
-        to: phoneNumber,
-        videoUrl,
-        hasCaption: !!caption
-      });
-
-      const response = await this.axiosInstance.post<WasenderResponse>('/messages', payload);
-
-      this.logger.serviceOperation('sendVideoMessage', 'success', {
-        messageId: response.data.data?.id,
-        status: response.data.data?.status
-      });
-
-      return response.data;
+      this.logger.info('Sending video message', { to: phoneNumber, videoUrl, hasCaption: !!caption });
+      return this.postSendMessage('sendVideoMessage', { to: phoneNumber, videoUrl, video: videoUrl, caption });
     }, 'sendVideoMessage');
   }
 
@@ -277,25 +213,25 @@ export class WasenderService {
         if (!request.message) {
           throw new Error('Message text is required for text messages');
         }
-        return this.sendTextMessage(phoneNumber, request.message);
+  return this.sendTextMessage(phoneNumber, request.message);
 
       case 'image':
         if (!request.imageUrl) {
           throw new Error('Image URL is required for image messages');
         }
-        return this.sendImageMessage(phoneNumber, request.imageUrl, request.caption);
+  return this.sendImageMessage(phoneNumber, request.imageUrl, request.caption);
 
       case 'document':
         if (!request.documentUrl) {
           throw new Error('Document URL is required for document messages');
         }
-        return this.sendDocumentMessage(phoneNumber, request.documentUrl, request.filename, request.caption);
+  return this.sendDocumentMessage(phoneNumber, request.documentUrl, request.filename || request.fileName, request.caption);
 
       case 'audio':
         if (!request.audioUrl) {
           throw new Error('Audio URL is required for audio messages');
         }
-        return this.sendAudioMessage(phoneNumber, request.audioUrl);
+  return this.sendAudioMessage(phoneNumber, request.audioUrl);
 
       case 'video':
         if (!request.videoUrl) {
@@ -306,6 +242,19 @@ export class WasenderService {
       default:
         throw new Error(`Unsupported message type: ${messageType}`);
     }
+  }
+
+  /**
+   * Obtiene información detallada de un mensaje por ID
+   */
+  async getMessageInfo(messageId: string): Promise<WasenderResponse> {
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+    return RetryUtil.executeWasenderOperation(async () => {
+      this.logger.info('Fetching message info', { messageId });
+      const response = await this.axiosInstance.get<WasenderResponse>(`/messages/${messageId}/info`);
+      this.logger.serviceOperation('getMessageInfo', 'success', { messageId });
+      return response.data;
+    }, 'getMessageInfo');
   }
 
   /**
@@ -368,6 +317,19 @@ export class WasenderService {
 
       return response.data;
     }, 'connectSession');
+  }
+
+  /**
+   * Desconecta una sesión de WhatsApp
+   */
+  async disconnectSession(sessionId: string): Promise<WasenderResponse> {
+    if (this.disabled) throw new Error('WasenderService disabled (missing WASENDER_API_TOKEN)');
+    return RetryUtil.executeWasenderOperation(async () => {
+      this.logger.info('Disconnecting WhatsApp session', { sessionId });
+      const response = await this.axiosInstance.post<WasenderResponse>(`/whatsapp-sessions/${sessionId}/disconnect`, {});
+      this.logger.serviceOperation('disconnectSession', 'success', { sessionId });
+      return response.data;
+    }, 'disconnectSession');
   }
 
   /**

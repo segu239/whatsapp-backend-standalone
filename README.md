@@ -103,10 +103,12 @@ All API endpoints require an API key sent via the `X-API-Key` header.
 - `GET /api/v1/wasender/sessions` - Get all sessions
 - `GET /api/v1/wasender/sessions/:id` - Get session info
 - `POST /api/v1/wasender/sessions/:id/connect` - Connect session
+- `POST /api/v1/wasender/sessions/:id/disconnect` - Disconnect session
 - `POST /api/v1/wasender/sessions` - Create new session
 - `PUT /api/v1/wasender/sessions/:id` - Update session
 - `GET /api/v1/wasender/connection-status` - Check connection status
 - `GET /api/v1/wasender/account` - Get account info
+- `GET /api/v1/wasender/messages/:id` - Get Wasender message info
 
 ### Webhooks
 
@@ -144,6 +146,62 @@ curl -X POST https://your-backend.railway.app/api/v1/messages/send \
     "phoneNumber": "+1234567890",
     "messageType": "text",
     "message": "Hello World!"
+  }'
+```
+
+### Send Image Message
+
+```bash
+curl -X POST https://your-backend.railway.app/api/v1/messages/send \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "messageType": "image",
+    "imageUrl": "https://example.com/image.jpg",
+    "caption": "Optional caption"
+  }'
+```
+
+### Send Document Message
+
+```bash
+curl -X POST https://your-backend.railway.app/api/v1/messages/send \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "messageType": "document",
+    "documentUrl": "https://example.com/file.pdf",
+    "fileName": "file.pdf",
+    "caption": "Optional caption"
+  }'
+```
+
+### Send Audio Message
+
+```bash
+curl -X POST https://your-backend.railway.app/api/v1/messages/send \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "messageType": "audio",
+    "audioUrl": "https://example.com/audio.mp3"
+  }'
+```
+
+### Send Video Message
+
+```bash
+curl -X POST https://your-backend.railway.app/api/v1/messages/send \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "messageType": "video",
+    "videoUrl": "https://example.com/video.mp4",
+    "caption": "Optional caption"
   }'
 ```
 
@@ -266,3 +324,32 @@ Troubleshooting on Render:
 ## License
 
 MIT License
+
+---
+
+## Wasender Integration Notes
+
+The service now uses the official Wasender endpoint `POST /send-message` (previously `/messages` in earlier internal code). Media field names follow the official documentation:
+
+- imageUrl
+- videoUrl
+- documentUrl
+- audioUrl
+- fileName (instead of legacy `filename`)
+
+Backward compatibility: the payload builder maps legacy keys (image, video, document, audio, filename) to the new *Url / fileName variants so existing scheduled data or older clients keep working. Prefer using the new names in all future integrations.
+
+Added endpoints:
+
+- `POST /api/v1/wasender/sessions/:id/disconnect`
+- `GET /api/v1/wasender/messages/:id`
+
+New internal methods in `WasenderService`:
+- `disconnectSession(sessionId)`
+- `getMessageInfo(messageId)`
+
+Validation: The request schema (`ValidationSchemas.sendMessage`) accepts both `filename` and `fileName`, normalizing them before sending to Wasender.
+
+Reply Support: Field `replyTo` is available at the interface level (future enhancement: add controller exposure if quoting messages is required).
+
+If you experience 404 or validation errors from Wasender, ensure the token is valid and that you are not blocked by IP/location; the new logging will record the endpoint `/send-message` usage and payload keys for diagnosis.

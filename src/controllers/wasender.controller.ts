@@ -112,6 +112,38 @@ export class WasenderController {
   };
 
   /**
+   * Desconecta una sesión de WhatsApp
+   * POST /api/v1/wasender/sessions/:id/disconnect
+   */
+  disconnectSession = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const sessionId = req.params.id;
+
+      this.logger.info('Disconnecting WhatsApp session', { sessionId });
+
+      const result = await this.wasenderService.disconnectSession(sessionId);
+
+      this.logger.info('Session disconnection initiated', {
+        sessionId,
+        success: result.success
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+        message: 'Session disconnection initiated successfully'
+      });
+
+    } catch (error) {
+      this.logger.error('Failed to disconnect session', {
+        error: (error as any).message,
+        sessionId: req.params.id
+      });
+      next(error);
+    }
+  };
+
+  /**
    * Crea una nueva sesión de WhatsApp
    * POST /api/v1/wasender/sessions
    */
@@ -274,6 +306,30 @@ export class WasenderController {
     } catch (error) {
       this.logger.error('Failed to validate configuration', {
         error: error.message
+      });
+      next(error);
+    }
+  };
+
+  /**
+   * Obtiene información detallada de un mensaje (Wasender)
+   * GET /api/v1/wasender/messages/:id
+   */
+  getMessageInfo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const messageId = req.params.id;
+      this.logger.info('Fetching Wasender message info', { messageId });
+      const result = await this.wasenderService.getMessageInfo(messageId);
+      this.logger.info('Message info fetched successfully', { messageId });
+      res.status(200).json({
+        success: true,
+        data: result,
+        message: 'Message info retrieved successfully'
+      });
+    } catch (error) {
+      this.logger.error('Failed to fetch message info', {
+        error: (error as any).message,
+        messageId: req.params.id
       });
       next(error);
     }

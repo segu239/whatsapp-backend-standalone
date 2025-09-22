@@ -162,6 +162,16 @@ router.post('/wasender/sessions/:id/connect',
 );
 
 /**
+ * @route   POST /api/v1/wasender/sessions/:id/disconnect
+ * @desc    Desconecta una sesión de WhatsApp
+ * @access  Private (requiere API key)
+ */
+router.post('/wasender/sessions/:id/disconnect',
+  ValidationMiddleware.validateParams(ValidationSchemas.idParam),
+  ErrorMiddleware.asyncHandler(wasenderController.disconnectSession)
+);
+
+/**
  * @route   POST /api/v1/wasender/sessions
  * @desc    Crea una nueva sesión de WhatsApp
  * @access  Private (requiere API key)
@@ -216,6 +226,16 @@ router.get('/wasender/validate-config',
  */
 router.get('/wasender/stats',
   ErrorMiddleware.asyncHandler(wasenderController.getServiceStats)
+);
+
+/**
+ * @route   GET /api/v1/wasender/messages/:id
+ * @desc    Obtiene información detallada de un mensaje de Wasender
+ * @access  Private (requiere API key)
+ */
+router.get('/wasender/messages/:id',
+  ValidationMiddleware.validateParams(ValidationSchemas.idParam),
+  ErrorMiddleware.asyncHandler(wasenderController.getMessageInfo)
 );
 
 /**

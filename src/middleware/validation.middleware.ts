@@ -190,6 +190,13 @@ export const ValidationSchemas = {
       .optional()
       .messages({
         'string.max': 'Filename cannot exceed 255 characters'
+      }),
+    // Alias oficial (fileName) aceptado además de filename legacy; se permite cualquiera de los dos
+    fileName: Joi.string()
+      .max(255)
+      .optional()
+      .messages({
+        'string.max': 'fileName cannot exceed 255 characters'
       })
   }),
 
